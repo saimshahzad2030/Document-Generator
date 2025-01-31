@@ -75,7 +75,7 @@ const InvoiceForm = () => {
 
     doc.setFontSize(11);
     doc.text("To:", 15, 50);
-    doc.text(`${data.companyName}`, 25, 50);
+    doc.text(`Mr ${data.recipientName}`, 25, 50);
     doc.text(
       `Our Ref: ${data.reference}\n\nKarachi, ${formatDate(
         data.invoiceDate
@@ -83,8 +83,8 @@ const InvoiceForm = () => {
       120,
       50
     );
-
-    doc.text(`Mr ${data.recipientName}`, 15, 60);
+    doc.setFont("helvetica", "bold");
+    doc.text(`${data.companyName}`, 15, 60);
     if (data.roleName) {
       doc.text(`${data.roleName}`, 15, 65);
     }
