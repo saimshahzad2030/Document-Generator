@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import jsPDF from "jspdf";
-import "jspdf-autotable";
+import autoTable from "jspdf-autotable";
 import { TextField, Button, Container, Typography } from "@mui/material";
 import { useForm } from "react-hook-form";
 
@@ -17,19 +17,29 @@ const InvoiceForm = () => {
       quantity: "",
       rate: "",
       totalAmount: "",
+      address: "",
+      companyName: "",
+      contactNumber: "",
+      departmentName: "",
+      directoryNumber: "",
+      invoiceDate: "",
+      invoiceNumber: "",
+      itemDescription: "",
+      recipientName: "",
+      reference: "",
+      roleName: "",
+      uan: "",
     },
   });
-  const quantity = watch("quantity") || 0;
-  const rate = watch("rate") || 0;
-
+  const quantity = Number(watch("quantity")) || 0;
+  const rate = Number(watch("rate")) || 0;
   React.useEffect(() => {
-    // Calculate total amount dynamically
     const total = quantity * rate;
-    setValue("totalAmount", total, { shouldValidate: true });
+    setValue("totalAmount", String(total), { shouldValidate: true });
   }, [quantity, rate, setValue]);
   const onSubmit = (data: any) => {
     console.log(data);
-    const formatText = (text, wordsPerLine = 5) => {
+    const formatText = (text: string, wordsPerLine = 5) => {
       const words = text.split(" ");
       const lines = [];
 
@@ -37,15 +47,14 @@ const InvoiceForm = () => {
         lines.push(words.slice(i, i + wordsPerLine).join(" "));
       }
 
-      return { text: lines.join("\n"), lines: lines.length }; // Join lines with newline characters
+      return { text: lines.join("\n"), lines: lines.length };
     };
-    const formatDate = (dateString) => {
+    const formatDate = (dateString: Date) => {
       const date = new Date(dateString);
       const day = date.getDate();
       const month = date.toLocaleString("en-US", { month: "short" });
       const year = date.getFullYear();
 
-      // Add suffix (st, nd, rd, th) to the day
       const suffix =
         day % 10 === 1 && day !== 11
           ? "st"
@@ -59,13 +68,11 @@ const InvoiceForm = () => {
     };
     const doc = new jsPDF();
 
-    // Set up header
     doc.setFontSize(18);
     doc.text("MUZAMMIL BROTHER", 105, 20, { align: "center" });
     doc.setFontSize(12);
     doc.text("THE INNOVATOR AND SUPPLIER", 105, 30, { align: "center" });
 
-    // Recipient details
     doc.setFontSize(11);
     doc.text("To:", 15, 50);
     doc.text(`${data.companyName}`, 25, 50);
@@ -84,7 +91,6 @@ const InvoiceForm = () => {
     if (data.departmentName) {
       doc.text(`${data.departmentName}`, 15, data.roleName ? 70 : 65);
     }
-    // doc.text("Karachi, Dec 12 2024", 140, 70);
 
     doc.text(
       formatText(`Address: ${data.address}`).text,
@@ -127,11 +133,9 @@ const InvoiceForm = () => {
           : (formatText(`Address: ${data.address}`).lines - 1) * 5 + 85
       );
     }
-    // doc.text("Our Invoice #: 1244/15-12-2024", 140, 90);
-
-    // Table content
-    doc.autoTable({
-      startY: (formatText(`Address: ${data.address}`).lines - 1) * 5 + 100,
+    let startY = (formatText(`Address: ${data.address}`).lines - 1) * 5 + 100;
+    autoTable(doc, {
+      startY,
       head: [["Item Description", "Qty", "Rates", "Total Amount"]],
       body: [
         [
@@ -143,10 +147,9 @@ const InvoiceForm = () => {
       ],
       styles: { fontSize: 10, cellPadding: 5 },
     });
-
     // Total amount
     doc.setFontSize(10);
-    doc.text("Total Amount:", 140, doc.autoTable.previous.finalY + 10);
+    doc.text("Total Amount:", 140, doc?.autoTable.previous.finalY + 10);
     doc.text(
       `Rs. ${data.rate * data.quantity}/=`,
       170,
@@ -169,17 +172,14 @@ const InvoiceForm = () => {
 
     const pageWidth = doc.internal.pageSize.getWidth();
 
-    // Define footer text
     const footerText1 =
       "#1025, Block-S, North Nazimabad, behind Usman e Ghani Masjid, Karachi";
     const footerText2 =
       "Contact: 03002162720, 03342162720, email: muzammiltrader@gmail.com";
 
-    // Calculate the center positions
     const centerX1 = (pageWidth - doc.getTextWidth(footerText1)) / 2;
     const centerX2 = (pageWidth - doc.getTextWidth(footerText2)) / 2;
 
-    // Add centered text
     doc.text(footerText1, centerX1, doc.autoTable.previous.finalY + 55);
     doc.text(footerText2, centerX2, doc.autoTable.previous.finalY + 60);
     // Save the PDF
