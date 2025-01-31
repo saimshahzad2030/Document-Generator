@@ -85,6 +85,8 @@ const InvoiceForm = () => {
     );
     doc.setFont("helvetica", "bold");
     doc.text(`${data.companyName}`, 15, 60);
+    doc.setFont("helvetica", "normal");
+
     if (data.roleName) {
       doc.text(`${data.roleName}`, 15, 65);
     }
