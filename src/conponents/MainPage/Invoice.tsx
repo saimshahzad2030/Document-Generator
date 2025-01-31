@@ -84,7 +84,7 @@ const InvoiceForm = () => {
       50
     );
 
-    doc.text(`Mr ${data.contactName}`, 15, 60);
+    doc.text(`Mr ${data.recipientName}`, 15, 60);
     if (data.roleName) {
       doc.text(`${data.roleName}`, 15, 65);
     }
@@ -105,12 +105,7 @@ const InvoiceForm = () => {
       doc.text(
         `Contact: ${data.contactNumber}`,
         15,
-        (formatText(`Address: ${data.address}`).lines - 1) * 5 +
-          data.roleName && data.departmentName
-          ? 85
-          : data.roleName || data.departmentName
-          ? 80
-          : 75
+        (formatText(`Address: ${data.address}`).lines - 1) * 5 + 85
       );
     }
     if (data.directoryNumber) {
