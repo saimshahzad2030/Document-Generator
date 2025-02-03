@@ -1,4 +1,4 @@
-import InvoiceForm from "@/conponents/MainPage/Invoice";
+import InvoiceForm from "@/components/MainPage/Invoice";
 import Image from "next/image";
 
 export default function Home() {

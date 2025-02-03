@@ -2,8 +2,22 @@
 import React from "react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import { TextField, Button, Container, Typography } from "@mui/material";
-import { useForm } from "react-hook-form";
+import {
+  TextField,
+  Button,
+  Container,
+  Typography,
+  IconButton,
+} from "@mui/material";
+import { useFieldArray, useForm } from "react-hook-form";
+import { AddIcon, DeleteIcon } from "@/constants/svgs";
+interface Item {
+  image: string;
+  itemDescription: string;
+  quantity: string;
+  rate: string;
+  total: string;
+}
 
 const InvoiceForm = () => {
   const {
@@ -11,32 +25,82 @@ const InvoiceForm = () => {
     handleSubmit,
     watch,
     setValue,
+    control,
     formState: { errors },
   } = useForm({
     defaultValues: {
-      quantity: "",
-      rate: "",
+      // quantity: "",
+      // rate: "",
       totalAmount: "",
       address: "",
       companyName: "",
       contactNumber: "",
       departmentName: "",
       directoryNumber: "",
+      items: [
+        { image: "", itemDescription: "", quantity: "", rate: "", total: "" },
+      ],
+
       invoiceDate: "",
       invoiceNumber: "",
-      itemDescription: "",
+      // itemDescription: "",
       recipientName: "",
       reference: "",
       roleName: "",
       uan: "",
     },
   });
-  const quantity = Number(watch("quantity")) || 0;
-  const rate = Number(watch("rate")) || 0;
-  React.useEffect(() => {
-    const total = quantity * rate;
-    setValue("totalAmount", String(total), { shouldValidate: true });
-  }, [quantity, rate, setValue]);
+  const [image, setImage] = React.useState<string | null>(null);
+  const items = watch("items") as Item[];
+  const { fields, append, remove } = useFieldArray({ control, name: "items" });
+
+  const fileInputRef = React.useState<HTMLInputElement | null>(null);
+  const handleImageUpload = (
+    event: React.ChangeEvent<HTMLInputElement>,
+    index: number
+  ) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setValue(`items.${index}.image`, reader.result as string, {
+          shouldValidate: true,
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleQuantityRateChange = (
+    index: number,
+    field: "quantity" | "rate",
+    value: string
+  ) => {
+    const updatedItems = [...items];
+    updatedItems[index] = {
+      ...updatedItems[index],
+      [field]: value,
+      total: (
+        Number(updatedItems[index].quantity) * Number(updatedItems[index].rate)
+      ).toFixed(2),
+    };
+
+    // Update the item at the given index
+    setValue(`items`, updatedItems, { shouldValidate: true });
+
+    // Recalculate the total amount for the entire invoice
+    const updatedTotal = updatedItems.reduce((sum, item) => {
+      const quantity = Number(item.quantity || 0);
+      const rate = Number(item.rate || 0);
+      return sum + quantity * rate;
+    }, 0);
+    const updatedTotalWithTax = updatedTotal + (updatedTotal * 18) / 100;
+
+    // Update the total amount of the invoice
+    setValue("totalAmount", updatedTotalWithTax.toFixed(2), {
+      shouldValidate: true,
+    });
+  };
   const onSubmit = (data: any) => {
     console.log(data);
     const formatText = (text: string, wordsPerLine = 5) => {
@@ -133,26 +197,71 @@ const InvoiceForm = () => {
     let startY = (formatText(`Address: ${data.address}`).lines - 1) * 5 + 100;
     autoTable(doc, {
       startY,
-      head: [["Item Description", "Qty", "Rates", "Total Amount"]],
-      body: [
+      head: [
         [
-          `${data.itemDescription}`,
-          `${data.quantity} pcs`,
-          `Rs. ${data.rate}/=`,
-          `Rs. ${data.rate * data.quantity}/=`,
+          "Item Image",
+          "Item Description",
+          "Qty",
+          "Rate",
+          "Total",
+          "Total(18% GST)",
         ],
       ],
+      body: items.map((item: Item) => [
+        // Pass only the base64 string as raw content
+        { image: item.image || null },
+        item.itemDescription,
+        `${item.quantity} pcs`, // Display quantity as pcs
+        `Rs. ${item.rate}/=`, // Display rate with currency
+        `Rs. ${item.quantity * item.rate}/=`, // Display total with currency
+        `Rs. ${Math.floor(
+          item.quantity * item.rate + item.quantity * item.rate * (18 / 100)
+        )}/=`,
+      ]),
+      didDrawCell: (data: any) => {
+        if (
+          data.section === "body" &&
+          data.column.index === 0 &&
+          data.cell.raw.image !== "no image"
+        ) {
+          const image = data.cell.raw.image;
+
+          if (typeof image === "string" && image.startsWith("data:image")) {
+            // Add the image at the correct coordinates
+            doc.addImage(
+              image,
+              "PNG",
+              data.cell.x + 2,
+              data.cell.y + 2,
+              30,
+              30
+            );
+          }
+        }
+      },
+      columnStyles: {
+        0: { minCellHeight: 32 }, // Set the minimum height for the image column
+      },
       styles: { fontSize: 10, cellPadding: 5 },
     });
-    // Total amount
     doc.setFontSize(10);
     doc.text("Total Amount:", 140, doc?.autoTable.previous.finalY + 10);
     doc.text(
-      `Rs. ${data.rate * data.quantity}/=`,
+      `Rs. ${data.totalAmount}/=`,
       170,
       doc.autoTable.previous.finalY + 10
     );
+    doc.text(
+      "Total Amount(+18% GST):",
+      120,
+      doc?.autoTable.previous.finalY + 20
+    );
 
+    doc.text(
+      `Rs. ${data.totalAmount + (data.totalAmount * 18) / 100}/=`,
+      170,
+      doc.autoTable.previous.finalY + 20
+    );
     // Footer - Contact Details
     doc.text("Muhammad Naeem Babar", 20, doc.autoTable.previous.finalY + 30);
     doc.text(
@@ -192,7 +301,7 @@ const InvoiceForm = () => {
         Generate Invoice PDF
       </Typography>
       <form onSubmit={handleSubmit(onSubmit)}>
-        <div className="grid grid-cols-1 gap-4">
+        <div className="grid grid-cols-1 gap-3">
           <div>
             <TextField
               label="Company Name"
@@ -200,7 +309,6 @@ const InvoiceForm = () => {
               {...register("companyName", {
                 required: "Company name is required",
               })}
-              margin="normal"
               error={!!errors.companyName}
               helperText={errors.companyName?.message}
             />
@@ -208,7 +316,6 @@ const InvoiceForm = () => {
 
           <div>
             <TextField
-              margin="normal"
               label="Recipient Name"
               fullWidth
               {...register("recipientName", {
@@ -223,7 +330,6 @@ const InvoiceForm = () => {
               label="Department Name"
               fullWidth
               {...register("departmentName")}
-              margin="normal"
               error={!!errors.departmentName}
               helperText={errors.departmentName?.message}
             />
@@ -233,14 +339,12 @@ const InvoiceForm = () => {
               label="Role Name"
               fullWidth
               {...register("roleName")}
-              margin="normal"
               error={!!errors.roleName}
               helperText={errors.roleName?.message}
             />
           </div>
           <div>
             <TextField
-              margin="normal"
               label="Address"
               fullWidth
               {...register("address", {
@@ -254,7 +358,6 @@ const InvoiceForm = () => {
             <TextField
               label="Reference"
               fullWidth
-              margin="normal"
               {...register("reference", {
                 required: "Reference is required",
               })}
@@ -266,7 +369,6 @@ const InvoiceForm = () => {
             <TextField
               label="Invoice Number"
               fullWidth
-              margin="normal"
               {...register("invoiceNumber", {
                 required: "Invoice number is required",
               })}
@@ -279,7 +381,6 @@ const InvoiceForm = () => {
               label="Invoice Date"
               type="date"
               fullWidth
-              margin="normal"
               InputLabelProps={{ shrink: true }}
               {...register("invoiceDate", {
                 required: "Invoice date is required",
@@ -289,55 +390,111 @@ const InvoiceForm = () => {
             />
           </div>
 
-          <div>
-            <TextField
-              label="Item Description"
-              fullWidth
-              margin="normal"
-              multiline
-              rows={3}
-              {...register("itemDescription", {
-                required: "Description is required",
-              })}
-              error={!!errors.itemDescription}
-              helperText={errors.itemDescription?.message}
-            />
-          </div>
+          {fields.map((item, index) => (
+            <div
+              key={item.id}
+              className="grid grid-cols-1 gap-3 border p-3 rounded-lg mb-2"
+            >
+              <h1>Item {index + 1}</h1>
 
-          <div className="grid grid-cols-2 gap-4">
-            <TextField
-              label="Quantity"
-              type="number"
-              margin="normal"
-              fullWidth
-              {...register("quantity", {
-                required: "Quantity is required",
-                valueAsNumber: true,
-              })}
-              error={!!errors.quantity}
-              helperText={errors.quantity?.message}
-            />
-            <TextField
-              label="Rate"
-              type="number"
-              fullWidth
-              margin="normal"
-              {...register("rate", {
-                required: "Rate is required",
-                valueAsNumber: true,
-              })}
-              error={!!errors.rate}
-              helperText={errors.rate?.message}
-            />
-          </div>
+              <div
+                className="w-24 h-24 border-2 border-dashed border-gray-400 flex items-center justify-center cursor-pointer rounded-lg"
+                onClick={() =>
+                  document.getElementById(`fileInput-${index}`)?.click()
+                }
+              >
+                {watch(`items.${index}.image`) ? (
+                  <img
+                    src={watch(`items.${index}.image`)}
+                    alt="Preview"
+                    className="w-full h-full object-cover rounded-lg"
+                  />
+                ) : (
+                  <span className="text-gray-500 text-center">
+                    Upload Image
+                  </span>
+                )}
+              </div>
+              <input
+                type="file"
+                accept="image/*"
+                id={`fileInput-${index}`}
+                onChange={(e) => handleImageUpload(e, index)}
+                className="hidden"
+              />
 
+              <TextField
+                label="Item Description"
+                fullWidth
+                multiline
+                rows={2}
+                {...register(`items.${index}.itemDescription`, {
+                  required: "Description is required",
+                })}
+                error={!!errors?.items?.[index]?.itemDescription}
+                helperText={errors?.items?.[index]?.itemDescription?.message}
+              />
+
+              <div className="grid grid-cols-2 gap-2">
+                <TextField
+                  label="Quantity"
+                  type="number"
+                  fullWidth
+                  value={watch(`items.${index}.quantity`)}
+                  onChange={(e) =>
+                    handleQuantityRateChange(index, "quantity", e.target.value)
+                  }
+                  error={!!errors?.items?.[index]?.quantity}
+                  helperText={errors?.items?.[index]?.quantity?.message}
+                />
+                <TextField
+                  label="Rate"
+                  type="number"
+                  fullWidth
+                  value={watch(`items.${index}.rate`)}
+                  onChange={(e) =>
+                    handleQuantityRateChange(index, "rate", e.target.value)
+                  }
+                  error={!!errors?.items?.[index]?.rate}
+                  helperText={errors?.items?.[index]?.rate?.message}
+                />
+              </div>
+
+              <button
+                className="w-full flex flex-col items-center justify-center p-2"
+                onClick={() => remove(index)}
+              >
+                {/* <Delete /> */}
+                <DeleteIcon className={"w-4 h-4"} />
+              </button>
+            </div>
+          ))}
+
+          <div className="w-full col-span-1 flex flex-row items-center justify-end">
+            <Button
+              variant="outlined"
+              // startIcon={<AddIcon className={"w-4 h-auto"} />}
+              fullWidth
+              onClick={() =>
+                append({
+                  image: "",
+                  itemDescription: "",
+                  quantity: "",
+                  rate: "",
+                  total: "",
+                })
+              }
+            >
+              Add Another Item
+            </Button>
+          </div>
           <div>
             <TextField
               label="Total Amount"
               type="number"
               fullWidth
-              margin="normal"
-              value={quantity * rate || ""}
+              value={watch("totalAmount")}
+              // value={}
               disabled
               helperText={errors.totalAmount?.message}
             />
@@ -347,7 +504,6 @@ const InvoiceForm = () => {
             <TextField
               label="Contact Number"
               fullWidth
-              margin="normal"
               {...register("contactNumber", {
                 required: "Contact number is required",
               })}
@@ -359,7 +515,6 @@ const InvoiceForm = () => {
             <TextField
               label="Directory Number"
               fullWidth
-              margin="normal"
               {...register("directoryNumber")}
               error={!!errors.directoryNumber}
               helperText={errors.directoryNumber?.message}
@@ -369,7 +524,6 @@ const InvoiceForm = () => {
             <TextField
               label="UAN"
               fullWidth
-              margin="normal"
               {...register("uan")}
               error={!!errors.uan}
               helperText={errors.uan?.message}
