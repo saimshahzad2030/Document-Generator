@@ -207,7 +207,7 @@ const InvoiceForm = () => {
           "Total(18% GST)",
         ],
       ],
-      body: items.map((item: Item) => [
+      body: items.map((item: any) => [
         // Pass only the base64 string as raw content
         { image: item.image || null },
         item.itemDescription,
