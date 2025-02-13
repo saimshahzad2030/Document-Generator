@@ -12,9 +12,12 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Checkbox,
 } from "@mui/material";
 import { useFieldArray, useForm } from "react-hook-form";
 import { AddIcon, DeleteIcon } from "@/constants/svgs";
+const label = { inputProps: { "aria-label": "Checkbox demo" } };
+
 interface Item {
   image: string;
   itemDescription: string;
@@ -30,6 +33,7 @@ const InvoiceForm = () => {
     reset,
     watch,
     setValue,
+    trigger,
     control,
     formState: { errors },
   } = useForm({
@@ -50,6 +54,13 @@ const InvoiceForm = () => {
       recipientName: "",
       reference: "",
       roleName: "",
+      timeOfSupply: "",
+      dateOfSupply: "",
+      supplierSTReg: "",
+      buyerSTReg: "",
+      supplierNTN: "",
+      buyerNTN: "",
+      customerId: "",
       uan: "",
     },
   });
@@ -70,13 +81,21 @@ const InvoiceForm = () => {
       recipientName: "",
       reference: "",
       roleName: "",
+      timeOfSupply: "",
+      dateOfSupply: "",
+      supplierSTReg: "",
+      buyerSTReg: "",
+      supplierNTN: "",
+      buyerNTN: "",
+      customerId: "",
       uan: "",
     });
   };
-  const [image, setImage] = React.useState<string | null>(null);
   const items = watch("items") as Item[];
   const { fields, append, remove } = useFieldArray({ control, name: "items" });
   const [selectedInvoice, setSelectedInvoice] = React.useState("");
+  const [salesTaxRecieptChecked, setSalesTaxRecieptChecked] =
+    React.useState(false);
 
   const invoiceOptions = [
     { code: "mbi", value: "Muzammil Brothers Invoice" },
@@ -86,7 +105,6 @@ const InvoiceForm = () => {
     { code: "mbd", value: "Muzammil Brothers DC" },
     { code: "mtd", value: "Muzammil Traders DC" },
   ];
-  const fileInputRef = React.useState<HTMLInputElement | null>(null);
   const handleImageUpload = (
     event: React.ChangeEvent<HTMLInputElement>,
     index: number
@@ -108,6 +126,8 @@ const InvoiceForm = () => {
     field: "quantity" | "rate",
     value: string
   ) => {
+    setValue(`items.${index}.${field}`, value); // Update the form field value
+    trigger(`items.${index}.${field}`);
     const updatedItems = [...items];
     updatedItems[index] = {
       ...updatedItems[index],
@@ -117,10 +137,8 @@ const InvoiceForm = () => {
       ).toFixed(2),
     };
 
-    // Update the item at the given index
     setValue(`items`, updatedItems, { shouldValidate: true });
 
-    // Recalculate the total amount for the entire invoice
     const updatedTotal = updatedItems.reduce((sum, item) => {
       const quantity = Number(item.quantity || 0);
       const rate = Number(item.rate || 0);
@@ -135,6 +153,270 @@ const InvoiceForm = () => {
       shouldValidate: true,
     });
   };
+  type InvoiceItem = {
+    image: string;
+    itemDescription: string;
+    quantity: string;
+    rate: string;
+    total: string;
+  };
+
+  type InvoiceData = {
+    totalAmount: string;
+    totalAmountNonGst: string;
+    address: string;
+    companyName: string;
+    contactNumber: string;
+    departmentName: string;
+    directoryNumber: string;
+    items: InvoiceItem[];
+    invoiceDate: Date;
+    customerId: string;
+    invoiceNumber: string;
+    recipientName: string;
+    supplierSTReg: string;
+    reference: string;
+    roleName: string;
+    timeOfSupply: string;
+    dateOfSupply: string;
+    buyerSTReg: string;
+    supplierNTN: string;
+    buyerNTN: string;
+    uan: string;
+  };
+  const formatDate = (dateString: Date) => {
+    const date = new Date(dateString);
+    const day = date.getDate();
+    const month = date.toLocaleString("en-US", { month: "short" });
+    const year = date.getFullYear();
+
+    const suffix =
+      day % 10 === 1 && day !== 11
+        ? "st"
+        : day % 10 === 2 && day !== 12
+        ? "nd"
+        : day % 10 === 3 && day !== 13
+        ? "rd"
+        : "th";
+
+    return `${day}${suffix} ${month}, ${year}`;
+  };
+  const generateSalesDoc = (data: InvoiceData) => {
+    const salesDoc = new jsPDF();
+
+    salesDoc.setFontSize(12);
+    salesDoc.text(
+      `${selectedInvoice == "mti" ? "Muzammil Traders" : "Muzammil Brothers"}`,
+      15,
+      35
+    );
+    salesDoc.setFontSize(11);
+
+    salesDoc.text(`#1025, Block-S, North Nazimabad, Karachi`, 15, 40);
+    salesDoc.setFontSize(24);
+    salesDoc.text("Invoice", 190, 25, { align: "right", maxWidth: 200 });
+    salesDoc.setFontSize(11);
+
+    salesDoc.text(`${formatDate(data?.invoiceDate)}`, 190, 35, {
+      align: "right",
+      maxWidth: 200,
+    });
+    salesDoc.text(`Invoice#: ${data.invoiceNumber}`, 190, 40, {
+      align: "right",
+      maxWidth: 200,
+    });
+    salesDoc.text(`Customer Id: ${data.customerId}`, 190, 45, {
+      align: "right",
+      maxWidth: 200,
+    });
+    salesDoc.setFont("helvetica", "normal");
+
+    salesDoc.text(
+      `Contact: ${data.contactNumber ? data.contactNumber : "-"}`,
+      15,
+      45
+    );
+    salesDoc.text(
+      `Dir: ${data.directoryNumber ? data.directoryNumber : "-"}`,
+      15,
+      50
+    );
+    salesDoc.text(`UAN: ${data.uan ? data.uan : "-"}`, 15, 55);
+    autoTable(salesDoc, {
+      startY: 65, // Left position of the first table
+      tableWidth: 80,
+      head: [["Supplier Name"]],
+      body: [
+        [
+          `${
+            selectedInvoice == "mti" ? "Muzammil Traders" : "Muzammil Brothers"
+          }`,
+        ],
+        [`#1025, Block-S North Nazimabad, Karachi`],
+        [`ST registration#: ${data.supplierSTReg}`],
+        [`NTN#: ${data.supplierNTN}`],
+
+        [
+          `${
+            data.contactNumber
+              ? data.contactNumber
+              : data.uan
+              ? data.uan
+              : data.directoryNumber
+          }`,
+        ],
+      ],
+      columnStyles: {
+        0: {
+          minCellHeight: 5,
+          halign: "left",
+          valign: "middle",
+        },
+      },
+      styles: { fontSize: 10, cellPadding: 4 },
+      headStyles: {
+        fillColor: [0, 0, 0],
+        textColor: [255, 255, 255],
+        fontStyle: "bold",
+        halign: "center",
+        valign: "middle",
+      },
+      pageBreak: "auto",
+    });
+    autoTable(salesDoc, {
+      startY: 65,
+      tableWidth: 80,
+      margin: { left: 115 },
+
+      head: [["Buyer Name"]],
+      body: [
+        [`${data.companyName}`],
+        [`${data.address}`],
+        [`ST registration#: ${data.supplierSTReg}`],
+        [`NTN#: ${data.buyerNTN}`],
+
+        [
+          `${
+            data.contactNumber
+              ? data.contactNumber
+              : data.uan
+              ? data.uan
+              : data.directoryNumber
+          }`,
+        ],
+      ],
+      columnStyles: {
+        0: {
+          minCellHeight: 5,
+          halign: "left",
+          valign: "middle",
+        },
+      },
+      styles: { fontSize: 10, cellPadding: 4 },
+      headStyles: {
+        fillColor: [0, 0, 0],
+        textColor: [255, 255, 255],
+        fontStyle: "bold",
+        halign: "center",
+        valign: "middle",
+      },
+      pageBreak: "auto",
+    });
+    let nextY = salesDoc.autoTable.previous.finalY + 10;
+    autoTable(salesDoc, {
+      startY: nextY,
+      head: [
+        [
+          "Item Description",
+          "Qty",
+          "Unit Price",
+          "Tax/\nunit",
+          "Tax Rate",
+          "Total Tax Amount",
+          "Total Amount",
+        ],
+      ],
+      body: items.map((item: any) => [
+        item.itemDescription,
+        `${item.quantity} pcs`,
+        `Rs. ${item.rate}/=`,
+        // `Rs. ${item.quantity * item.rate}/=`,
+        `Rs. ${item.rate * 0.18}/=`,
+        `18%`,
+        `Rs. ${Math.floor(item.quantity * item.rate * 0.18)}/=`,
+        `Rs. ${Math.floor(
+          item.quantity * item.rate + item.quantity * item.rate * (18 / 100)
+        )}/=`,
+      ]),
+      columnStyles: {
+        0: {
+          minCellHeight: 10,
+          cellWidth: 45,
+          halign: "center",
+          valign: "middle",
+        },
+        1: { cellWidth: 20, halign: "center", valign: "middle" },
+        2: { cellWidth: 20, halign: "center", valign: "middle" },
+        3: { cellWidth: 20, halign: "center", valign: "middle" },
+        4: { cellWidth: 20, halign: "center", valign: "middle" },
+        5: { cellWidth: 28, halign: "center", valign: "middle" },
+        6: { cellWidth: 28, halign: "center", valign: "middle" },
+      },
+      styles: { fontSize: 10, cellPadding: 5 },
+      headStyles: {
+        fillColor: [0, 0, 0],
+        textColor: [255, 255, 255],
+        fontStyle: "bold",
+        halign: "center",
+        valign: "middle",
+      },
+      pageBreak: "auto",
+    });
+    let nextY2 = salesDoc.autoTable.previous.finalY + 10;
+
+    if (nextY2 + 30 > salesDoc.internal.pageSize.height - 10) {
+      salesDoc.addPage();
+      nextY2 = 20;
+    }
+
+    salesDoc.setFontSize(10);
+    salesDoc.text("Total Amount (No GST):", 120, nextY2);
+    salesDoc.text(`Rs. ${data.totalAmountNonGst}/=`, 170, nextY2);
+
+    nextY2 += 5;
+    salesDoc.text("Total Amount (+18% GST):", 120, nextY2);
+    salesDoc.text(`Rs. ${data.totalAmount}/=`, 170, nextY2);
+
+    nextY2 += 15;
+
+    if (nextY2 + 30 > salesDoc.internal.pageSize.height - 10) {
+      salesDoc.addPage();
+      nextY2 = 20;
+    }
+
+    salesDoc.text("Muhammad Naeem Babar", 20, nextY2);
+    salesDoc.text("Team Leader At: Muzammil Brother", 20, nextY2 + 5);
+    salesDoc.text("Karachi, Pakistan", 20, nextY2 + 10);
+    salesDoc.text(
+      "00903342162720, 03002162720, naeembabar67@yahoo.com",
+      20,
+      nextY2 + 15
+    );
+
+    const pageWidth = salesDoc.internal.pageSize.getWidth();
+    const footerText1 =
+      "#1025, Block-S, North Nazimabad, behind Usman e Ghani Masjid, Karachi";
+    const footerText2 =
+      "Contact: 03002162720, 03342162720, email: muzammiltrader@gmail.com";
+
+    const centerX1 = (pageWidth - salesDoc.getTextWidth(footerText1)) / 2;
+    const centerX2 = (pageWidth - salesDoc.getTextWidth(footerText2)) / 2;
+
+    salesDoc.text(footerText1, centerX1, nextY2 + 25);
+    salesDoc.text(footerText2, centerX2, nextY2 + 30);
+
+    salesDoc.save(`sales.pdf`);
+  };
   const onSubmit = (data: any) => {
     console.log(data);
     const formatText = (text: string, wordsPerLine = 5) => {
@@ -147,37 +429,23 @@ const InvoiceForm = () => {
 
       return { text: lines.join("\n"), lines: lines.length };
     };
-    const formatDate = (dateString: Date) => {
-      const date = new Date(dateString);
-      const day = date.getDate();
-      const month = date.toLocaleString("en-US", { month: "short" });
-      const year = date.getFullYear();
 
-      const suffix =
-        day % 10 === 1 && day !== 11
-          ? "st"
-          : day % 10 === 2 && day !== 12
-          ? "nd"
-          : day % 10 === 3 && day !== 13
-          ? "rd"
-          : "th";
-
-      return `${day}${suffix} ${month}, ${year}`;
-    };
     const doc = new jsPDF();
-
-    // doc.setFontSize(18);
-    // doc.text("MUZAMMIL BROTHER", 105, 20, { align: "center" });
-    // doc.setFontSize(12);
-    // doc.text("THE INNOVATOR AND SUPPLIER", 105, 30, { align: "center" });
+    if (salesTaxRecieptChecked) {
+      generateSalesDoc(data);
+    }
     doc.addImage(
-      selectedInvoice == "mti" ? "/mtl.png" : "/mbl.png",
+      selectedInvoice == "mti" ||
+        selectedInvoice == "mtd" ||
+        selectedInvoice == "mtq"
+        ? "/mtl.png"
+        : "/mbl.png",
       "PNG",
       9,
       0,
       190,
       60
-    ); // Adjust x, y, width, height
+    );
 
     doc.setFontSize(11);
     doc.text("To:", 15, 60);
@@ -186,9 +454,13 @@ const InvoiceForm = () => {
       `Our Ref: ${data.reference}\n\nKarachi, ${formatDate(
         data.invoiceDate
       )}\n\n ${
-        selectedInvoice == "mti" || selectedInvoice == "mbi" ? "Invoice" : "DC"
+        selectedInvoice == "mti" || selectedInvoice == "mbi"
+          ? "Invoice"
+          : selectedInvoice == "mtd" || selectedInvoice == "mbd"
+          ? "DC"
+          : "Quotation"
       } #:${data.invoiceNumber}`,
-      190, // Start closer to the right side
+      190,
       60,
       { align: "right", maxWidth: 200 }
     );
@@ -284,12 +556,12 @@ const InvoiceForm = () => {
       },
       columnStyles: {
         0: {
-          minCellHeight: 30,
-          cellWidth: 30,
+          minCellHeight: 35,
+          cellWidth: 35,
           halign: "center",
           valign: "middle",
-        }, // Image Column
-        1: { cellWidth: 55, halign: "left", valign: "middle" },
+        },
+        1: { cellWidth: 45, halign: "left", valign: "middle" },
         2: { cellWidth: 20, halign: "left", valign: "middle" },
         3: { cellWidth: 20, halign: "left", valign: "middle" },
         4: { cellWidth: 20, halign: "left", valign: "middle" },
@@ -297,21 +569,20 @@ const InvoiceForm = () => {
       },
       styles: { fontSize: 10, cellPadding: 5 },
       headStyles: {
-        fillColor: [0, 0, 0], // Black header background
-        textColor: [255, 255, 255], // White text color for contrast
+        fillColor: [0, 0, 0],
+        textColor: [255, 255, 255],
         fontStyle: "bold",
-        halign: "center", // Center headers
+        halign: "center",
         valign: "middle",
       },
-      pageBreak: "auto", // Automatically add a page if content overflows
+      pageBreak: "auto",
     });
 
     let nextY = doc.autoTable.previous.finalY + 10;
 
-    // **Ensure new content fits in the page**
     if (nextY + 30 > doc.internal.pageSize.height - 10) {
       doc.addPage();
-      nextY = 20; // Reset position for the new page
+      nextY = 20;
     }
 
     doc.setFontSize(10);
@@ -324,13 +595,11 @@ const InvoiceForm = () => {
 
     nextY += 15;
 
-    // **Ensure Footer does not overlap**
     if (nextY + 30 > doc.internal.pageSize.height - 10) {
       doc.addPage();
       nextY = 20;
     }
 
-    // Footer - Contact Details
     doc.text("Muhammad Naeem Babar", 20, nextY);
     doc.text("Team Leader At: Muzammil Brother", 20, nextY + 5);
     doc.text("Karachi, Pakistan", 20, nextY + 10);
@@ -397,6 +666,8 @@ const InvoiceForm = () => {
 
       {(selectedInvoice == "mbi" ||
         selectedInvoice == "mti" ||
+        selectedInvoice == "mtq" ||
+        selectedInvoice == "mbq" ||
         selectedInvoice == "mtd" ||
         selectedInvoice == "mbd") && (
         <>
@@ -412,7 +683,11 @@ const InvoiceForm = () => {
               ? "Muzammil Traders Invoice"
               : selectedInvoice == "mbd"
               ? "Muzammil Brothers Delivery Challan"
-              : "Muzammil Traders Delivery Challan"}
+              : selectedInvoice == "mtd"
+              ? "Muzammil Traders Delivery Challan"
+              : selectedInvoice == "mtq"
+              ? "Muzammil Traders Quotaion"
+              : "Muzammil Brothers Quotaion"}
           </Typography>
           <form onSubmit={handleSubmit(onSubmit)}>
             <div className="grid grid-cols-1 gap-3">
@@ -484,14 +759,18 @@ const InvoiceForm = () => {
                   label={
                     selectedInvoice == "mbi" || selectedInvoice == "mti"
                       ? "Invoice Number"
-                      : "DC Number"
+                      : selectedInvoice == "mbd" || selectedInvoice == "mtd"
+                      ? "DC Number"
+                      : "Quotation"
                   }
                   fullWidth
                   {...register("invoiceNumber", {
                     required:
                       selectedInvoice == "mbi" || selectedInvoice == "mti"
                         ? "Invoice number is required"
-                        : "DC number is required",
+                        : selectedInvoice == "mbd" || selectedInvoice == "mtd"
+                        ? "DC number is required"
+                        : "Quotation number is required",
                   })}
                   error={!!errors.invoiceNumber}
                   helperText={errors.invoiceNumber?.message}
@@ -562,14 +841,15 @@ const InvoiceForm = () => {
                       label="Quantity"
                       type="number"
                       fullWidth
-                      value={watch(`items.${index}.quantity`)}
-                      onChange={(e) =>
-                        handleQuantityRateChange(
-                          index,
-                          "quantity",
-                          e.target.value
-                        )
-                      }
+                      {...register(`items.${index}.quantity`, {
+                        required: "Quantity is required",
+                        onChange: (e) =>
+                          handleQuantityRateChange(
+                            index,
+                            "quantity",
+                            e.target.value
+                          ),
+                      })}
                       error={!!errors?.items?.[index]?.quantity}
                       helperText={errors?.items?.[index]?.quantity?.message}
                     />
@@ -577,10 +857,15 @@ const InvoiceForm = () => {
                       label="Rate"
                       type="number"
                       fullWidth
-                      value={watch(`items.${index}.rate`)}
-                      onChange={(e) =>
-                        handleQuantityRateChange(index, "rate", e.target.value)
-                      }
+                      {...register(`items.${index}.rate`, {
+                        required: "Rate is required",
+                        onChange: (e) =>
+                          handleQuantityRateChange(
+                            index,
+                            "rate",
+                            e.target.value
+                          ),
+                      })}
                       error={!!errors?.items?.[index]?.rate}
                       helperText={errors?.items?.[index]?.rate?.message}
                     />
@@ -663,7 +948,133 @@ const InvoiceForm = () => {
                   helperText={errors.uan?.message}
                 />
               </div>
+              {(selectedInvoice == "mbi" || selectedInvoice == "mti") && (
+                <div>
+                  <div className="w-full flex flex-row items-center">
+                    <Checkbox
+                      {...label}
+                      checked={salesTaxRecieptChecked}
+                      onChange={() => {
+                        setSalesTaxRecieptChecked(!salesTaxRecieptChecked);
+                      }}
+                    />
+                    <p
+                      className={`${
+                        salesTaxRecieptChecked
+                          ? "text-gray-900 "
+                          : "text-gray-400"
+                      }`}
+                    >
+                      Generate Sales Tax
+                    </p>
+                  </div>
+                </div>
+              )}
 
+              {salesTaxRecieptChecked && (
+                <>
+                  <div>
+                    <TextField
+                      label="Customer Id"
+                      fullWidth
+                      {...register("customerId", {
+                        required: salesTaxRecieptChecked
+                          ? "Customer Id is required"
+                          : false,
+                      })}
+                      error={!!errors.customerId}
+                      helperText={errors.customerId?.message}
+                    />
+                  </div>
+                  <div>
+                    <TextField
+                      label="Time of Supply"
+                      type="time"
+                      fullWidth
+                      InputLabelProps={{ shrink: true }}
+                      {...register("timeOfSupply", {
+                        required: salesTaxRecieptChecked
+                          ? "Time of supply is required"
+                          : false,
+                      })}
+                      error={!!errors.timeOfSupply}
+                      helperText={errors.timeOfSupply?.message}
+                    />
+                  </div>
+
+                  <div>
+                    <TextField
+                      label="Date of Supply"
+                      type="date"
+                      fullWidth
+                      InputLabelProps={{ shrink: true }}
+                      {...register("dateOfSupply", {
+                        required: salesTaxRecieptChecked
+                          ? "Supply date is required"
+                          : false,
+                      })}
+                      error={!!errors.dateOfSupply}
+                      helperText={errors.dateOfSupply?.message}
+                    />
+                  </div>
+
+                  <div>
+                    <TextField
+                      label="Supplier ST Registration #"
+                      fullWidth
+                      {...register("supplierSTReg", {
+                        required: salesTaxRecieptChecked
+                          ? "Supplier ST Reg is required"
+                          : false,
+                      })}
+                      error={!!errors.supplierSTReg}
+                      helperText={errors.supplierSTReg?.message}
+                    />
+                  </div>
+
+                  <div>
+                    <TextField
+                      label="Buyer ST Registration #"
+                      fullWidth
+                      {...register("buyerSTReg", {
+                        required: salesTaxRecieptChecked
+                          ? "Buyer ST Reg is required"
+                          : false,
+                      })}
+                      error={!!errors.buyerSTReg}
+                      helperText={errors.buyerSTReg?.message}
+                    />
+                  </div>
+
+                  <div>
+                    <TextField
+                      label="Supplier NTN Number"
+                      fullWidth
+                      {...register("supplierNTN", {
+                        required: salesTaxRecieptChecked
+                          ? "Supplier NTN Reg is required"
+                          : false,
+                      })}
+                      error={!!errors.supplierNTN}
+                      helperText={errors.supplierNTN?.message}
+                    />
+                  </div>
+
+                  <div>
+                    <TextField
+                      label="Buyer NTN Number"
+                      fullWidth
+                      {...register("buyerNTN", {
+                        required: salesTaxRecieptChecked
+                          ? "Buyer NTN Reg is required"
+                          : false,
+                      })}
+                      error={!!errors.buyerNTN}
+                      helperText={errors.buyerNTN?.message}
+                    />
+                  </div>
+                </>
+              )}
               <div>
                 <Button
                   type="submit"
