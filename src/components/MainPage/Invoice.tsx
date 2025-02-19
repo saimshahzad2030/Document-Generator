@@ -515,14 +515,24 @@ const InvoiceForm = () => {
     autoTable(doc, {
       startY,
       head: [
-        [
-          "Item Image",
-          "Item Description",
-          "Qty (Pcs)",
-          "Rate (Rs)",
-          "Total (Rs)",
-          "Item Total( +18% GST)",
-        ],
+        selectedInvoice == "mbi" ||
+        selectedInvoice == "mbd" ||
+        selectedInvoice == "mbd"
+          ? [
+              "Item Image",
+              "Item Description",
+              "Qty (Pcs)",
+              "Rate (Rs)",
+              "Total (Rs)",
+            ]
+          : [
+              "Item Image",
+              "Item Description",
+              "Qty (Pcs)",
+              "Rate (Rs)",
+              "Total (Rs)",
+              "Item Total( +18% GST)",
+            ],
       ],
       body: items.map((item: any) => [
         { image: item.image || null },
@@ -548,23 +558,59 @@ const InvoiceForm = () => {
               "PNG",
               data.cell.x + 2,
               data.cell.y + 2,
-              30,
-              30
+              15,
+              15
             );
           }
         }
       },
       columnStyles: {
         0: {
-          minCellHeight: 35,
+          minCellHeight: 15,
           cellWidth: 35,
           halign: "center",
           valign: "middle",
         },
-        1: { cellWidth: 45, halign: "left", valign: "middle" },
-        2: { cellWidth: 20, halign: "left", valign: "middle" },
-        3: { cellWidth: 20, halign: "left", valign: "middle" },
-        4: { cellWidth: 20, halign: "left", valign: "middle" },
+        1: {
+          cellWidth:
+            selectedInvoice == "mbi" ||
+            selectedInvoice == "mbd" ||
+            selectedInvoice == "mbd"
+              ? 60
+              : 45,
+          halign: "left",
+          valign: "middle",
+        },
+        2: {
+          cellWidth:
+            selectedInvoice == "mbi" ||
+            selectedInvoice == "mbd" ||
+            selectedInvoice == "mbd"
+              ? 30
+              : 20,
+          halign: "left",
+          valign: "middle",
+        },
+        3: {
+          cellWidth:
+            selectedInvoice == "mbi" ||
+            selectedInvoice == "mbd" ||
+            selectedInvoice == "mbd"
+              ? 25
+              : 20,
+          halign: "left",
+          valign: "middle",
+        },
+        4: {
+          cellWidth:
+            selectedInvoice == "mbi" ||
+            selectedInvoice == "mbd" ||
+            selectedInvoice == "mbd"
+              ? 25
+              : 20,
+          halign: "left",
+          valign: "middle",
+        },
         5: { cellWidth: 35, halign: "left", valign: "middle" },
       },
       styles: { fontSize: 10, cellPadding: 5 },
@@ -588,10 +634,16 @@ const InvoiceForm = () => {
     doc.setFontSize(10);
     doc.text("Total Amount (No GST):", 120, nextY);
     doc.text(`Rs. ${data.totalAmountNonGst}/=`, 170, nextY);
-
-    nextY += 5;
-    doc.text("Total Amount (+18% GST):", 120, nextY);
-    doc.text(`Rs. ${data.totalAmount}/=`, 170, nextY);
+    if (
+      selectedInvoice == "mbi" ||
+      selectedInvoice == "mbd" ||
+      selectedInvoice == "mbd"
+    ) {
+    } else {
+      nextY += 5;
+      doc.text("Total Amount (+18% GST):", 120, nextY);
+      doc.text(`Rs. ${data.totalAmount}/=`, 170, nextY);
+    }
 
     nextY += 15;
 
