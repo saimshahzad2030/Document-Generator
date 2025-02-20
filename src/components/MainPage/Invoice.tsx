@@ -121,38 +121,77 @@ const InvoiceForm = () => {
     }
   };
 
+  // const handleQuantityRateChange = (
+  //   index: number,
+  //   field: "quantity" | "rate",
+  //   value: string
+  // ) => {
+  //   setValue(`items.${index}.${field}`, value); // Update the form field value
+  //   trigger(`items.${index}.${field}`);
+  //   const updatedItems = [...items];
+  //   updatedItems[index] = {
+  //     ...updatedItems[index],
+  //     [field]: value,
+  //     total: (
+  //       Number(updatedItems[index].quantity) * Number(updatedItems[index].rate)
+  //     ).toFixed(2),
+  //   };
+
+  //   setValue(`items`, updatedItems, { shouldValidate: true });
+
+  //   const updatedTotal = updatedItems.reduce((sum, item) => {
+  //     const quantity = Number(item.quantity || 0);
+  //     const rate = Number(item.rate || 0);
+  //     return sum + quantity * rate;
+  //   }, 0);
+  //   const updatedTotalWithTax = updatedTotal + (updatedTotal * 18) / 100;
+  //   setValue("totalAmountNonGst", updatedTotal.toFixed(2), {
+  //     shouldValidate: true,
+  //   });
+
+  //   setValue("totalAmount", updatedTotalWithTax.toFixed(2), {
+  //     shouldValidate: true,
+  //   });
+  // };
   const handleQuantityRateChange = (
     index: number,
     field: "quantity" | "rate",
     value: string
   ) => {
-    setValue(`items.${index}.${field}`, value); // Update the form field value
-    trigger(`items.${index}.${field}`);
-    const updatedItems = [...items];
-    updatedItems[index] = {
-      ...updatedItems[index],
-      [field]: value,
-      total: (
-        Number(updatedItems[index].quantity) * Number(updatedItems[index].rate)
-      ).toFixed(2),
-    };
+    // Convert value to number safely
+    const numericValue = Number(value) || 0;
 
-    setValue(`items`, updatedItems, { shouldValidate: true });
+    // Get the existing item
+    const currentItem = watch(`items.${index}`);
 
-    const updatedTotal = updatedItems.reduce((sum, item) => {
+    // Calculate new total
+    const updatedTotal = (
+      Number(currentItem.quantity || 0) * Number(currentItem.rate || 0)
+    ).toFixed(2);
+
+    // Update only the specific field instead of replacing the whole array
+    setValue(`items.${index}.${field}`, String(numericValue), {
+      shouldValidate: true,
+    });
+    setValue(`items.${index}.total`, updatedTotal, { shouldValidate: true });
+
+    // Recalculate totals without replacing the array
+    const updatedItems = watch("items");
+
+    const totalAmountNonGst = updatedItems.reduce((sum, item) => {
       const quantity = Number(item.quantity || 0);
       const rate = Number(item.rate || 0);
       return sum + quantity * rate;
     }, 0);
-    const updatedTotalWithTax = updatedTotal + (updatedTotal * 18) / 100;
-    setValue("totalAmountNonGst", updatedTotal.toFixed(2), {
-      shouldValidate: true,
-    });
 
-    setValue("totalAmount", updatedTotalWithTax.toFixed(2), {
+    const totalAmount = totalAmountNonGst + (totalAmountNonGst * 18) / 100;
+
+    setValue("totalAmountNonGst", totalAmountNonGst.toFixed(2), {
       shouldValidate: true,
     });
+    setValue("totalAmount", totalAmount.toFixed(2), { shouldValidate: true });
   };
+
   type InvoiceItem = {
     image: string;
     itemDescription: string;
@@ -921,6 +960,31 @@ const InvoiceForm = () => {
                       error={!!errors?.items?.[index]?.rate}
                       helperText={errors?.items?.[index]?.rate?.message}
                     />
+                    <TextField
+                      label="Item Total No Gst"
+                      type="number"
+                      fullWidth
+                      value={`${Number(watch(`items.${index}.total`))}`}
+                      // value={}
+                      disabled
+                      helperText={errors.totalAmountNonGst?.message}
+                    />
+                    {(selectedInvoice == "mti" ||
+                      selectedInvoice == "mtd" ||
+                      selectedInvoice == "mtq") && (
+                      <TextField
+                        label="Item Total with Gst"
+                        type="number"
+                        fullWidth
+                        value={`${
+                          Number(watch(`items.${index}.total`)) +
+                          Number(watch(`items.${index}.total`)) * 0.18
+                        }`}
+                        // value={}
+                        disabled
+                        helperText={errors.totalAmountNonGst?.message}
+                      />
+                    )}
                   </div>
 
                   <button
@@ -960,15 +1024,19 @@ const InvoiceForm = () => {
                   disabled
                   helperText={errors.totalAmountNonGst?.message}
                 />
-                <TextField
-                  label="Total Amount (18% GST)"
-                  type="number"
-                  fullWidth
-                  value={watch("totalAmount")}
-                  // value={}
-                  disabled
-                  helperText={errors.totalAmount?.message}
-                />
+                {(selectedInvoice == "mti" ||
+                  selectedInvoice == "mtd" ||
+                  selectedInvoice == "mtq") && (
+                  <TextField
+                    label="Total Amount (18% GST)"
+                    type="number"
+                    fullWidth
+                    value={watch("totalAmount")}
+                    // value={}
+                    disabled
+                    helperText={errors.totalAmount?.message}
+                  />
+                )}
               </div>
 
               <div>
