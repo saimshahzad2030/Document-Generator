@@ -551,140 +551,204 @@ const InvoiceForm = () => {
       );
     }
     let startY = (formatText(`Address: ${data.address}`).lines - 1) * 5 + 110;
-    autoTable(doc, {
-      startY,
-      head: [
-        selectedInvoice == "mbi" ||
-        selectedInvoice == "mbd" ||
-        selectedInvoice == "mbd"
-          ? [
-              "Item Image",
-              "Item Description",
-              "Qty (Pcs)",
-              "Rate (Rs)",
-              "Total (Rs)",
-            ]
-          : [
-              "Item Image",
-              "Item Description",
-              "Qty (Pcs)",
-              "Rate (Rs)",
-              "Total (Rs)",
-              "Item Total( +18% GST)",
-            ],
-      ],
-      body: items.map((item: any) => [
-        { image: item.image || null },
-        item.itemDescription,
-        `${item.quantity} pcs`,
-        `Rs. ${item.rate}/=`,
-        `Rs. ${item.quantity * item.rate}/=`,
-        `Rs. ${Math.floor(
-          item.quantity * item.rate + item.quantity * item.rate * (18 / 100)
-        )}/=`,
-      ]),
-      didDrawCell: (data: any) => {
-        if (
-          data.section === "body" &&
-          data.column.index === 0 &&
-          data.cell.raw.image !== "no image"
-        ) {
-          const image = data.cell.raw.image;
 
-          if (typeof image === "string" && image.startsWith("data:image")) {
-            doc.addImage(
-              image,
-              "PNG",
-              data.cell.x + 2,
-              data.cell.y + 2,
-              15,
-              15
-            );
+    if (selectedInvoice != "mtd" && selectedInvoice != "mbd") {
+      autoTable(doc, {
+        startY,
+        head: [
+          selectedInvoice == "mbi" || selectedInvoice == "mbd"
+            ? [
+                "Item Image",
+                "Item Description",
+                "Qty (Pcs)",
+                "Rate (Rs)",
+                "Total (Rs)",
+              ]
+            : [
+                "Item Image",
+                "Item Description",
+                "Qty (Pcs)",
+                "Rate (Rs)",
+                "Total (Rs)",
+                "Item Total( +18% GST)",
+              ],
+        ],
+        body: items.map((item: any) => [
+          { image: item.image || null },
+          item.itemDescription,
+          `${item.quantity} pcs`,
+          `Rs. ${item.rate}/=`,
+          `Rs. ${item.quantity * item.rate}/=`,
+          `Rs. ${Math.floor(
+            item.quantity * item.rate + item.quantity * item.rate * (18 / 100)
+          )}/=`,
+        ]),
+        didDrawCell: (data: any) => {
+          if (
+            data.section === "body" &&
+            data.column.index === 0 &&
+            data.cell.raw.image !== "no image"
+          ) {
+            const image = data.cell.raw.image;
+
+            if (typeof image === "string" && image.startsWith("data:image")) {
+              doc.addImage(
+                image,
+                "PNG",
+                data.cell.x + 2,
+                data.cell.y + 2,
+                15,
+                15
+              );
+            }
           }
-        }
-      },
-      columnStyles: {
-        0: {
-          minCellHeight: 15,
-          cellWidth: 35,
+        },
+        columnStyles: {
+          0: {
+            minCellHeight: 15,
+            cellWidth: 35,
+            halign: "center",
+            valign: "middle",
+          },
+          1: {
+            cellWidth:
+              selectedInvoice == "mbi" ||
+              selectedInvoice == "mbd" ||
+              selectedInvoice == "mbd"
+                ? 60
+                : 45,
+            halign: "left",
+            valign: "middle",
+          },
+          2: {
+            cellWidth:
+              selectedInvoice == "mbi" ||
+              selectedInvoice == "mbd" ||
+              selectedInvoice == "mbd"
+                ? 30
+                : 20,
+            halign: "left",
+            valign: "middle",
+          },
+          3: {
+            cellWidth:
+              selectedInvoice == "mbi" ||
+              selectedInvoice == "mbd" ||
+              selectedInvoice == "mbd"
+                ? 25
+                : 20,
+            halign: "left",
+            valign: "middle",
+          },
+          4: {
+            cellWidth:
+              selectedInvoice == "mbi" ||
+              selectedInvoice == "mbd" ||
+              selectedInvoice == "mbd"
+                ? 25
+                : 20,
+            halign: "left",
+            valign: "middle",
+          },
+          5: { cellWidth: 35, halign: "left", valign: "middle" },
+        },
+        styles: { fontSize: 10, cellPadding: 5 },
+        headStyles: {
+          fillColor: [0, 0, 0],
+          textColor: [255, 255, 255],
+          fontStyle: "bold",
           halign: "center",
           valign: "middle",
         },
-        1: {
-          cellWidth:
-            selectedInvoice == "mbi" ||
-            selectedInvoice == "mbd" ||
-            selectedInvoice == "mbd"
-              ? 60
-              : 45,
-          halign: "left",
-          valign: "middle",
-        },
-        2: {
-          cellWidth:
-            selectedInvoice == "mbi" ||
-            selectedInvoice == "mbd" ||
-            selectedInvoice == "mbd"
-              ? 30
-              : 20,
-          halign: "left",
-          valign: "middle",
-        },
-        3: {
-          cellWidth:
-            selectedInvoice == "mbi" ||
-            selectedInvoice == "mbd" ||
-            selectedInvoice == "mbd"
-              ? 25
-              : 20,
-          halign: "left",
-          valign: "middle",
-        },
-        4: {
-          cellWidth:
-            selectedInvoice == "mbi" ||
-            selectedInvoice == "mbd" ||
-            selectedInvoice == "mbd"
-              ? 25
-              : 20,
-          halign: "left",
-          valign: "middle",
-        },
-        5: { cellWidth: 35, halign: "left", valign: "middle" },
-      },
-      styles: { fontSize: 10, cellPadding: 5 },
-      headStyles: {
-        fillColor: [0, 0, 0],
-        textColor: [255, 255, 255],
-        fontStyle: "bold",
-        halign: "center",
-        valign: "middle",
-      },
-      pageBreak: "auto",
-    });
+        pageBreak: "auto",
+      });
+    } else {
+      autoTable(doc, {
+        startY,
+        head: [["Item Image", "Remarks", "Qty (Pcs)"]],
+        body: items.map((item: any) => [
+          { image: item.image || null },
+          item.itemDescription,
+          `${item.quantity} pcs`,
+        ]),
+        didDrawCell: (data: any) => {
+          if (
+            data.section === "body" &&
+            data.column.index === 0 &&
+            data.cell.raw.image !== "no image"
+          ) {
+            const image = data.cell.raw.image;
 
+            if (typeof image === "string" && image.startsWith("data:image")) {
+              doc.addImage(
+                image,
+                "PNG",
+                data.cell.x + 2,
+                data.cell.y + 2,
+                15,
+                15
+              );
+            }
+          }
+        },
+        columnStyles: {
+          0: {
+            minCellHeight: 20,
+            cellWidth: 55,
+            halign: "center",
+            valign: "middle",
+          },
+          1: {
+            cellWidth: 80,
+            halign: "left",
+            valign: "middle",
+          },
+          2: {
+            cellWidth: 50,
+            halign: "left",
+            valign: "middle",
+          },
+          3: {
+            cellWidth: 25,
+            halign: "left",
+            valign: "middle",
+          },
+        },
+        styles: { fontSize: 10, cellPadding: 5 },
+        headStyles: {
+          fillColor: [0, 0, 0],
+          textColor: [255, 255, 255],
+          fontStyle: "bold",
+          halign: "center",
+          valign: "middle",
+        },
+        pageBreak: "auto",
+      });
+    }
     let nextY = doc.autoTable.previous.finalY + 10;
 
-    if (nextY + 30 > doc.internal.pageSize.height - 10) {
-      doc.addPage();
-      nextY = 20;
-    }
+    if (selectedInvoice != "mtd" && selectedInvoice != "mbd") {
+      if (nextY + 30 > doc.internal.pageSize.height - 10) {
+        doc.addPage();
+        nextY = 20;
+      }
 
-    doc.setFontSize(10);
-    doc.text("Total Amount (No GST):", 120, nextY);
-    doc.text(`Rs. ${data.totalAmountNonGst}/=`, 170, nextY);
-    if (
-      selectedInvoice == "mbi" ||
-      selectedInvoice == "mbd" ||
-      selectedInvoice == "mbd"
-    ) {
-    } else {
-      nextY += 5;
-      doc.text("Total Amount (+18% GST):", 120, nextY);
-      doc.text(`Rs. ${data.totalAmount}/=`, 170, nextY);
-    }
+      doc.setFontSize(10);
+      doc.text("Total Amount (No GST):", 120, nextY);
+      doc.text(`Rs. ${data.totalAmountNonGst}/=`, 170, nextY);
+      if (
+        selectedInvoice == "mbi" ||
+        selectedInvoice == "mbd" ||
+        selectedInvoice == "mbd"
+      ) {
+      } else {
+        nextY += 5;
+        doc.text("Total Amount (+18% GST):", 120, nextY);
+        doc.text(`Rs. ${data.totalAmount}/=`, 170, nextY);
+      }
 
-    nextY += 15;
+      nextY += 15;
+    }
 
     if (nextY + 30 > doc.internal.pageSize.height - 10) {
       doc.addPage();
@@ -915,11 +979,18 @@ const InvoiceForm = () => {
                   />
 
                   <TextField
-                    label="Item Description"
+                    label={
+                      selectedInvoice == "mtd" || selectedInvoice == "mbd"
+                        ? "Item Remarks"
+                        : "Item Description"
+                    }
                     fullWidth
                     multiline
                     {...register(`items.${index}.itemDescription`, {
-                      required: "Description is required",
+                      required:
+                        selectedInvoice == "mtd" || selectedInvoice == "mbd"
+                          ? "Remarks are required"
+                          : "Description is required",
                     })}
                     error={!!errors?.items?.[index]?.itemDescription}
                     helperText={
@@ -944,47 +1015,51 @@ const InvoiceForm = () => {
                       error={!!errors?.items?.[index]?.quantity}
                       helperText={errors?.items?.[index]?.quantity?.message}
                     />
-                    <TextField
-                      label="Rate"
-                      type="number"
-                      fullWidth
-                      {...register(`items.${index}.rate`, {
-                        required: "Rate is required",
-                        onChange: (e) =>
-                          handleQuantityRateChange(
-                            index,
-                            "rate",
-                            e.target.value
-                          ),
-                      })}
-                      error={!!errors?.items?.[index]?.rate}
-                      helperText={errors?.items?.[index]?.rate?.message}
-                    />
-                    <TextField
-                      label="Item Total No Gst"
-                      type="number"
-                      fullWidth
-                      value={`${Number(watch(`items.${index}.total`))}`}
-                      // value={}
-                      disabled
-                      helperText={errors.totalAmountNonGst?.message}
-                    />
-                    {(selectedInvoice == "mti" ||
-                      selectedInvoice == "mtd" ||
-                      selectedInvoice == "mtq") && (
-                      <TextField
-                        label="Item Total with Gst"
-                        type="number"
-                        fullWidth
-                        value={`${
-                          Number(watch(`items.${index}.total`)) +
-                          Number(watch(`items.${index}.total`)) * 0.18
-                        }`}
-                        // value={}
-                        disabled
-                        helperText={errors.totalAmountNonGst?.message}
-                      />
+                    {selectedInvoice != "mbd" && selectedInvoice != "mtd" && (
+                      <>
+                        <TextField
+                          label="Rate"
+                          type="number"
+                          fullWidth
+                          {...register(`items.${index}.rate`, {
+                            required: "Rate is required",
+                            onChange: (e) =>
+                              handleQuantityRateChange(
+                                index,
+                                "rate",
+                                e.target.value
+                              ),
+                          })}
+                          error={!!errors?.items?.[index]?.rate}
+                          helperText={errors?.items?.[index]?.rate?.message}
+                        />
+                        <TextField
+                          label="Item Total No Gst"
+                          type="number"
+                          fullWidth
+                          value={`${Number(watch(`items.${index}.total`))}`}
+                          // value={}
+                          disabled
+                          helperText={errors.totalAmountNonGst?.message}
+                        />
+                      </>
                     )}
+                    {selectedInvoice == "mti" ||
+                      selectedInvoice == "mtq" ||
+                      (selectedInvoice != "mbd" && selectedInvoice != "mtd" && (
+                        <TextField
+                          label="Item Total with Gst"
+                          type="number"
+                          fullWidth
+                          value={`${
+                            Number(watch(`items.${index}.total`)) +
+                            Number(watch(`items.${index}.total`)) * 0.18
+                          }`}
+                          // value={}
+                          disabled
+                          helperText={errors.totalAmountNonGst?.message}
+                        />
+                      ))}
                   </div>
 
                   <button
@@ -1014,30 +1089,30 @@ const InvoiceForm = () => {
                   Add Another Item
                 </Button>
               </div>
-              <div className="grid grid-cols-2 gap-2">
-                <TextField
-                  label="Total Amount"
-                  type="number"
-                  fullWidth
-                  value={watch("totalAmountNonGst")}
-                  // value={}
-                  disabled
-                  helperText={errors.totalAmountNonGst?.message}
-                />
-                {(selectedInvoice == "mti" ||
-                  selectedInvoice == "mtd" ||
-                  selectedInvoice == "mtq") && (
+              {selectedInvoice != "mbd" && selectedInvoice != "mtd" && (
+                <div className="grid grid-cols-2 gap-2">
                   <TextField
-                    label="Total Amount (18% GST)"
+                    label="Total Amount"
                     type="number"
                     fullWidth
-                    value={watch("totalAmount")}
+                    value={watch("totalAmountNonGst")}
                     // value={}
                     disabled
-                    helperText={errors.totalAmount?.message}
+                    helperText={errors.totalAmountNonGst?.message}
                   />
-                )}
-              </div>
+                  {(selectedInvoice == "mti" || selectedInvoice == "mtq") && (
+                    <TextField
+                      label="Total Amount (18% GST)"
+                      type="number"
+                      fullWidth
+                      value={watch("totalAmount")}
+                      // value={}
+                      disabled
+                      helperText={errors.totalAmount?.message}
+                    />
+                  )}
+                </div>
+              )}
 
               <div>
                 <TextField
