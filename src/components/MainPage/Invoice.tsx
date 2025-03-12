@@ -166,7 +166,7 @@ const InvoiceForm = () => {
 
     // Calculate new total
     const updatedTotal = (
-      Number(currentItem.quantity || 0) * Number(currentItem.rate || 0)
+      Number(currentItem.quantity || 0) * +(currentItem.rate || 0)
     ).toFixed(2);
 
     // Update only the specific field instead of replacing the whole array
@@ -180,7 +180,7 @@ const InvoiceForm = () => {
 
     const totalAmountNonGst = updatedItems.reduce((sum, item) => {
       const quantity = Number(item.quantity || 0);
-      const rate = Number(item.rate || 0);
+      const rate = +(item.rate || 0);
       return sum + quantity * rate;
     }, 0);
 
@@ -1020,9 +1020,14 @@ const InvoiceForm = () => {
                         <TextField
                           label="Rate"
                           type="number"
+                          inputProps={{ step: "any" }}
                           fullWidth
                           {...register(`items.${index}.rate`, {
                             required: "Rate is required",
+                            pattern: {
+                              value: /^[0-9]+(\.[0-9]+)?$/, // Regex to allow decimals
+                              message: "Please enter a valid number",
+                            },
                             onChange: (e) =>
                               handleQuantityRateChange(
                                 index,
