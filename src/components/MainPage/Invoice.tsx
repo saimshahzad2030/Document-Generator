@@ -96,7 +96,8 @@ const InvoiceForm = () => {
   const [selectedInvoice, setSelectedInvoice] = React.useState("");
   const [salesTaxRecieptChecked, setSalesTaxRecieptChecked] =
     React.useState(false);
-
+ const [calculateGst, setCalculateGst] =
+    React.useState(false);
   const invoiceOptions = [
     { code: "mbi", value: "Muzammil Brothers Invoice" },
     { code: "mti", value: "Muzammil Traders Invoice" },
@@ -734,7 +735,7 @@ const InvoiceForm = () => {
       }
 
       doc.setFontSize(10);
-      doc.text("Total Amount (No GST):", 120, nextY);
+      doc.text("Total Amount:", 120, nextY);
       doc.text(`Rs. ${data.totalAmountNonGst}/=`, 170, nextY);
       if (
         selectedInvoice == "mbi" ||
@@ -742,9 +743,11 @@ const InvoiceForm = () => {
         selectedInvoice == "mbd"
       ) {
       } else {
-        nextY += 5;
+        if(calculateGst){
+          nextY += 5;
         doc.text("Total Amount (+18% GST):", 120, nextY);
         doc.text(`Rs. ${data.totalAmount}/=`, 170, nextY);
+        }
       }
 
       nextY += 15;
@@ -783,7 +786,15 @@ const InvoiceForm = () => {
               ? "(Muzammil Traders)"
               : "(Muzammil Brothers)"
           }.pdf`
-        : `Delivery-Challan${
+        :
+          selectedInvoice == "mtd" || selectedInvoice == "mbd"
+          ? 
+           `Delivery-Challan${
+            selectedInvoice.includes("t")
+              ? "(Muzammil Traders)"
+              : "(Muzammil Brothers)"
+          }.pdf`
+          :`Quotation${
             selectedInvoice.includes("t")
               ? "(Muzammil Traders)"
               : "(Muzammil Brothers)"
@@ -1170,8 +1181,29 @@ const InvoiceForm = () => {
                   </div>
                 </div>
               )}
-
-              {salesTaxRecieptChecked && (
+ {  (
+                <div>
+                  <div className="w-full flex flex-row items-center">
+                    <Checkbox
+                      {...label}
+                      checked={calculateGst}
+                      onChange={() => {
+                        setCalculateGst(!calculateGst);
+                      }}
+                    />
+                    <p
+                      className={`${
+                        calculateGst
+                          ? "text-gray-900 "
+                          : "text-gray-400"
+                      }`}
+                    >
+                      View Gst on Reciept
+                    </p>
+                  </div>
+                </div>
+              )}
+              {(selectedInvoice == "mbi" || selectedInvoice == "mti") && salesTaxRecieptChecked && (
                 <>
                   <div>
                     <TextField
