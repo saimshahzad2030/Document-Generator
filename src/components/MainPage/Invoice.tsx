@@ -578,9 +578,9 @@ const InvoiceForm = () => {
           { image: item.image || null },
           item.itemDescription,
           `${item.quantity} pcs`,
-          `Rs. ${item.rate}/=`,
-          `Rs. ${item.quantity * item.rate}/=`,
-          `Rs. ${Math.floor(
+          `${item.rate}/=`,
+          `${item.quantity * item.rate}/=`,
+          `${Math.floor(
             item.quantity * item.rate + item.quantity * item.rate * (18 / 100)
           )}/=`,
         ]),
@@ -607,7 +607,7 @@ const InvoiceForm = () => {
         columnStyles: {
           0: {
             minCellHeight: 15,
-            cellWidth: 35,
+            cellWidth: 25,
             halign: "center",
             valign: "middle",
           },
@@ -617,7 +617,9 @@ const InvoiceForm = () => {
               selectedInvoice == "mbd" ||
               selectedInvoice == "mbd"
                 ? 60
-                : 45,
+                : 35,
+             fontSize:9,
+
             halign: "left",
             valign: "middle",
           },
@@ -627,8 +629,10 @@ const InvoiceForm = () => {
               selectedInvoice == "mbd" ||
               selectedInvoice == "mbd"
                 ? 30
-                : 20,
+                : 25,
             halign: "left",
+             fontSize:9,
+
             valign: "middle",
           },
           3: {
@@ -637,8 +641,9 @@ const InvoiceForm = () => {
               selectedInvoice == "mbd" ||
               selectedInvoice == "mbd"
                 ? 25
-                : 20,
-            halign: "left",
+                : 25,
+            halign: "center",
+            fontSize:9,
             valign: "middle",
           },
           4: {
@@ -647,11 +652,16 @@ const InvoiceForm = () => {
               selectedInvoice == "mbd" ||
               selectedInvoice == "mbd"
                 ? 25
-                : 20,
-            halign: "left",
+                : 35,
+            halign: "center",
+            fontSize:9,
+
             valign: "middle",
           },
-          5: { cellWidth: 35, halign: "left", valign: "middle" },
+          5: { cellWidth: 35, halign: "center", valign: "middle"
+           , fontSize:9,
+          
+           },
         },
         styles: { fontSize: 10, cellPadding: 5 },
         headStyles: {
